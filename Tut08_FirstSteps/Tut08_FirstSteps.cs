@@ -18,13 +18,42 @@ namespace FuseeApp
     [FuseeApplication(Name = "Tut08_FirstSteps", Description = "Yet another FUSEE App.")]
     public class Tut08_FirstSteps : RenderCanvas
     {
+
+        private SceneContainer _scene;
+        private SceneRendererForward _sceneRenderer;
+        private Transform _cubeTransform;
+
         // Init is called on startup. 
         public override void Init()
         {
-            // Set the clear color for the backbuffer to "greenery"
-            RC.ClearColor = (float4) ColorUint.Greenery;
+
+            // Set the clear color for the backbuffer to white (100% intensity in all color channels R, G, B, A).
+            RC.ClearColor = new float4(136f/255f, 176f/255f, 75f/255f, 1);
+
+
+            // Create a scene with a cube
+            // The three components: one Transform, one ShaderEffect (blue material) and the Mesh
+            _cubeTransform = new Transform {Translation = new float3(0, 0, 50), Rotation = new float3(0, 0.4f, 0)};
+            var cubeShader = MakeEffect.FromDiffuseSpecular((float4)ColorUint.Blue, float4.Zero);
+            var cubeMesh = SimpleMeshes.CreateCuboid(new float3(10, 10, 10));
+            
+            // Assemble the cube node containing the three components
+            var cubeNode = new SceneNode();
+            cubeNode.Components.Add(_cubeTransform);
+            cubeNode.Components.Add(cubeShader);
+            cubeNode.Components.Add(cubeMesh);
+
+            // Create the scene containing the cube as the only object
+            _scene = new SceneContainer();
+            _scene.Children.Add(cubeNode);
+
+            // Create a scene renderer holding the scene above
+            _sceneRenderer = new SceneRendererForward(_scene);
+
+            _camAngle = 0;
         }
 
+            float _camAngle;
         // RenderAFrame is called once a frame
         public override void RenderAFrame()
         {
@@ -32,6 +61,13 @@ namespace FuseeApp
 
             // Clear the backbuffer
             RC.Clear(ClearFlags.Color | ClearFlags.Depth);
+
+            RC.View = float4x4.CreateTranslation(0,0,50) * float4x4.CreateRotationY(_camAngle);
+            
+            _camAngle = _camAngle + 0.05f;
+            _cubeTransform.Translation = _cubeTransform.Translation + new float3(0, 0.1f, 0);
+
+            _sceneRenderer.Render(RC);
 
            // Swap buffers: Show the contents of the backbuffer (containing the currently rendered frame) on the front buffer.
             Present();
